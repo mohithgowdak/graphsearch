@@ -163,11 +163,11 @@ rejected with a hint to OCR them first, encrypted PDFs with a hint to decrypt.
 flowchart LR
     C([Client]) -->|"GraphQL"| S["FastAPI + Strawberry"]
     S --> R["RagService"]
-    R --> CH["Chunker<br/><sub>paragraph-aware</sub>"]
-    R --> E["Embedder<br/><sub>hash · local · OpenAI</sub>"]
-    R --> V["VectorStore<br/><sub>in-memory cosine</sub>"]
-    R --> L["LLM<br/><sub>extractive · OpenAI · Claude</sub>"]
-    V <--> DB[("SQLite<br/><sub>docs · chunks · vectors</sub>")]
+    R --> CH["Chunker<br/>paragraph-aware"]
+    R --> E["Embedder<br/>hash · local · OpenAI"]
+    R --> V["VectorStore<br/>in-memory cosine"]
+    R --> L["LLM<br/>extractive · OpenAI · Claude"]
+    V <--> DB[("SQLite<br/>docs · chunks · vectors")]
     style S fill:#e10098,color:#fff
     style R fill:#1c1c28,color:#fff
 ```
