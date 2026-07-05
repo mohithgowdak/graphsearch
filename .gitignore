@@ -24,3 +24,4 @@ Thumbs.db
 
 # Project docs kept out of the repo
 *.pdf
+.gstack/

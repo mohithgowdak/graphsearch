@@ -20,6 +20,10 @@ query {
 }
 ```
 
+![GraphSearch demo: asking "How do I get my money back?" in GraphiQL and getting the returns policy with ranked sources](docs/demo.gif)
+
+*Semantic retrieval with the offline `local` backend: "How do I get my money back?" finds the returns policy — no shared keywords needed.*
+
 ## Why GraphQL for RAG?
 
 - **One endpoint, typed schema** — clients ask for exactly the fields they need
@@ -31,6 +35,17 @@ query {
 
 ## Quickstart
 
+### Install
+
+```bash
+pip install graphsearch            # from PyPI
+# or run the prebuilt image:
+docker run -p 8000:8000 ghcr.io/mohithgowdak/graphsearch:latest
+# or from source:
+git clone https://github.com/mohithgowdak/graphsearch && cd graphsearch
+pip install -e ".[dev]"
+```
+
 ### Run locally (no API keys needed)
 
 The default configuration is fully offline: a hashing-trick embedder plus an
@@ -38,11 +53,7 @@ extractive answer mode. It exercises the entire pipeline and is perfect for
 kicking the tires, tests, and CI.
 
 ```bash
-git clone https://github.com/mohithgowdak/graphsearch
-cd graphsearch
-pip install -e ".[dev]"
-
-# Ingest the bundled example docs
+# Ingest some documents (bundled examples shown; any .md/.txt works)
 graphsearch-ingest data/example_docs
 
 # Start the server
