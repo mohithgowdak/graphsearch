@@ -1,0 +1,16 @@
+services:
+  graphsearch:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Offline defaults — swap to real backends by uncommenting below.
+      GRAPHSEARCH_EMBEDDINGS: ${GRAPHSEARCH_EMBEDDINGS:-hash}
+      GRAPHSEARCH_LLM: ${GRAPHSEARCH_LLM:-extractive}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - graphsearch-data:/data
+
+volumes:
+  graphsearch-data:

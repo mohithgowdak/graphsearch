@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graphsearch"
+version = "0.1.0"
+description = "GraphSearch: a GraphQL API server for Retrieval-Augmented Generation (RAG) over your documents"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "GraphSearch contributors" }]
+keywords = ["graphql", "rag", "semantic-search", "llm", "retrieval-augmented-generation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+dependencies = [
+    "fastapi>=0.110",
+    "strawberry-graphql[fastapi]>=0.220",
+    "uvicorn[standard]>=0.29",
+    "pydantic-settings>=2.2",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.30"]
+anthropic = ["anthropic>=0.30"]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "ruff>=0.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/mohithgowdak/graphsearch"
+Issues = "https://github.com/mohithgowdak/graphsearch/issues"
+
+[project.scripts]
+graphsearch = "graphsearch.main:run"
+graphsearch-ingest = "graphsearch.ingest:main"
+
+[tool.setuptools.packages.find]
+include = ["graphsearch*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
