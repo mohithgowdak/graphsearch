@@ -6,10 +6,13 @@ Two implementations ship out of the box:
   network needed, so the demo, tests, and CI all run offline. Retrieval
   quality is lexical rather than semantic, but it exercises the exact same
   pipeline.
-- ``OpenAIEmbedder`` — real semantic embeddings via the OpenAI API.
+- ``LocalEmbedder`` — real semantic embeddings computed locally with
+  sentence-transformers. No API key, runs on CPU; the model (~80 MB for the
+  default all-MiniLM-L6-v2) is downloaded on first use.
+- ``OpenAIEmbedder`` — semantic embeddings via the OpenAI API.
 
-To add a new backend (e.g. sentence-transformers, Cohere, Voyage), subclass
-``Embedder`` and register it in ``create_embedder``.
+To add a new backend (e.g. Cohere, Voyage), subclass ``Embedder`` and
+register it in ``create_embedder``.
 """
 
 from __future__ import annotations
@@ -56,6 +59,32 @@ class HashEmbedder(Embedder):
         return np.vstack([self._embed_one(t) for t in texts])
 
 
+class LocalEmbedder(Embedder):
+    """Semantic embeddings computed locally with sentence-transformers (no API key)."""
+
+    def __init__(self, model: str = "sentence-transformers/all-MiniLM-L6-v2") -> None:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError(
+                "The 'sentence-transformers' package is required for "
+                "GRAPHSEARCH_EMBEDDINGS=local. "
+                "Install it with: pip install graphsearch[local]"
+            ) from exc
+        self._model = SentenceTransformer(model)
+        # Renamed in newer sentence-transformers releases; support both.
+        get_dim = getattr(
+            self._model, "get_embedding_dimension", None
+        ) or self._model.get_sentence_embedding_dimension
+        self.dimension = get_dim()
+
+    def embed(self, texts: list[str]) -> np.ndarray:
+        if not texts:
+            return np.empty((0, self.dimension), dtype=np.float32)
+        matrix = self._model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
+        return np.asarray(matrix, dtype=np.float32)
+
+
 class OpenAIEmbedder(Embedder):
     """Semantic embeddings via the OpenAI embeddings API."""
 
@@ -86,6 +115,8 @@ class OpenAIEmbedder(Embedder):
 def create_embedder(settings: Settings) -> Embedder:
     if settings.embeddings == "hash":
         return HashEmbedder()
+    if settings.embeddings == "local":
+        return LocalEmbedder(settings.local_embedding_model)
     if settings.embeddings == "openai":
         return OpenAIEmbedder(settings.openai_api_key, settings.openai_embedding_model)
     raise ValueError(f"Unknown embeddings backend: {settings.embeddings!r}")

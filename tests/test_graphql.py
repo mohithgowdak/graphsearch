@@ -14,7 +14,7 @@ ANSWER = """
 query Ask($question: String!) {
   answer(question: $question) {
     text
-    sources { id documentId text score }
+    sources { id documentId documentTitle text score }
   }
 }
 """
@@ -40,6 +40,7 @@ def test_upload_and_answer_roundtrip(client):
     answer = data["answer"]
     assert "password" in answer["text"]
     assert answer["sources"][0]["documentId"] == doc["id"]
+    assert answer["sources"][0]["documentTitle"] == "faq"
 
 
 def test_search_query(client):

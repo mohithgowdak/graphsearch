@@ -43,6 +43,7 @@ class Document:
 class Chunk:
     id: strawberry.ID
     document_id: strawberry.ID
+    document_title: str | None
     text: str
     score: float
 
@@ -51,6 +52,7 @@ class Chunk:
         return Chunk(
             id=strawberry.ID(hit.chunk_id),
             document_id=strawberry.ID(hit.document_id),
+            document_title=hit.document_title,
             text=hit.text,
             score=hit.score,
         )
@@ -59,7 +61,9 @@ class Chunk:
 @strawberry.type
 class Answer:
     text: str
-    sources: list[Chunk]
+    sources: list[Chunk] = strawberry.field(
+        description="Retrieved passages; citations like [1] in `text` are 1-indexed into this list."
+    )
 
 
 def _service(info: Info) -> RagService:
@@ -104,7 +108,7 @@ class Mutation:
 
     @strawberry.mutation(description="Delete a document and its indexed chunks.")
     async def delete_document(self, info: Info, id: strawberry.ID) -> bool:
-        return await asyncio.to_thread(_service(info).db.delete_document, str(id))
+        return await asyncio.to_thread(_service(info).delete_document, str(id))
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

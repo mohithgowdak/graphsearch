@@ -29,12 +29,13 @@ class Settings(BaseSettings):
     default_top_k: int = 4
 
     # Backends: which implementation to use for each pipeline stage.
-    #   embeddings: "hash" (offline, no key needed) or "openai"
+    #   embeddings: "hash" (offline, no key needed), "local" (sentence-transformers), or "openai"
     #   llm: "extractive" (offline), "openai", or "anthropic"
     embeddings: str = "hash"
     llm: str = "extractive"
 
     # Model names (only used when the matching backend is selected)
+    local_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     openai_embedding_model: str = "text-embedding-3-small"
     openai_model: str = "gpt-4o-mini"
     anthropic_model: str = "claude-sonnet-5"

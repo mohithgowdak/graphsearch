@@ -50,6 +50,7 @@ class ChunkRecord:
     document_id: str
     idx: int
     text: str
+    document_title: str | None = None
 
 
 class Database:
@@ -128,10 +129,11 @@ class Database:
     def all_embeddings(self) -> tuple[list[ChunkRecord], np.ndarray]:
         """Return every chunk with its embedding matrix (rows align with chunks)."""
         rows = self._conn.execute(
-            "SELECT id, document_id, idx, text, embedding FROM chunks"
+            "SELECT c.id, c.document_id, c.idx, c.text, d.title, c.embedding"
+            " FROM chunks c JOIN documents d ON d.id = c.document_id"
         ).fetchall()
         if not rows:
             return [], np.empty((0, 0), dtype=np.float32)
-        records = [ChunkRecord(r[0], r[1], r[2], r[3]) for r in rows]
-        matrix = np.vstack([np.frombuffer(r[4], dtype=np.float32) for r in rows])
+        records = [ChunkRecord(r[0], r[1], r[2], r[3], r[4]) for r in rows]
+        matrix = np.vstack([np.frombuffer(r[5], dtype=np.float32) for r in rows])
         return records, matrix

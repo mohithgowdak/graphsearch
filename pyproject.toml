@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "graphsearch"
-version = "0.1.0"
+version = "0.2.0"
 description = "GraphSearch: a GraphQL API server for Retrieval-Augmented Generation (RAG) over your documents"
 readme = "README.md"
 license = { text = "MIT" }
@@ -27,6 +27,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+local = ["sentence-transformers>=2.7"]
 openai = ["openai>=1.30"]
 anthropic = ["anthropic>=0.30"]
 dev = [

@@ -43,7 +43,16 @@ class RagService:
         if not chunks:
             raise ValueError("Document content is empty")
         embeddings = self.embedder.embed(chunks)
-        return self.db.insert_document(content, title, source, chunks, embeddings)
+        record = self.db.insert_document(content, title, source, chunks, embeddings)
+        self.vector_store.invalidate()
+        return record
+
+    def delete_document(self, doc_id: str) -> bool:
+        """Delete a document and drop its chunks from the search index."""
+        deleted = self.db.delete_document(doc_id)
+        if deleted:
+            self.vector_store.invalidate()
+        return deleted
 
     def search(self, query: str, top_k: int | None = None) -> list[SearchHit]:
         """Embed the query and return the most similar chunks."""
@@ -52,9 +61,13 @@ class RagService:
         return self.vector_store.search(query_vector, top_k)
 
     def answer(self, question: str, top_k: int | None = None) -> AnswerResult:
-        """Retrieve relevant chunks and generate a grounded answer."""
+        """Retrieve relevant chunks and generate a grounded answer.
+
+        Citation numbers in the answer text ([1], [2], …) refer to positions
+        in ``sources`` (1-indexed).
+        """
         hits = self.search(question, top_k)
-        text = self.llm.generate(question, [hit.text for hit in hits])
+        text = self.llm.generate(question, hits)
         return AnswerResult(text=text, sources=hits)
 
     def close(self) -> None:

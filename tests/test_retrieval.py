@@ -42,5 +42,20 @@ def test_answer_includes_sources(service):
 def test_delete_document_removes_chunks_from_search(service):
     record = service.ingest("Kubernetes clusters are configured via kubeconfig.", title="k8s")
     assert service.search("kubernetes", top_k=5)
-    assert service.db.delete_document(record.id)
+    assert service.delete_document(record.id)
     assert service.search("kubernetes", top_k=5) == []
+
+
+def test_ingest_after_search_is_visible(service):
+    """The cached embedding matrix must be refreshed after new documents arrive."""
+    service.ingest("First document about databases.", title="one")
+    assert len(service.search("databases", top_k=10)) == 1
+
+    service.ingest("Second document about databases.", title="two")
+    assert len(service.search("databases", top_k=10)) == 2
+
+
+def test_search_hits_carry_document_title(service):
+    service.ingest("The warehouse is in Springfield.", title="locations")
+    hits = service.search("where is the warehouse", top_k=1)
+    assert hits[0].document_title == "locations"

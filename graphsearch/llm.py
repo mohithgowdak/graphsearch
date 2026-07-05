@@ -7,6 +7,10 @@ Three implementations ship out of the box:
 - ``OpenAILLM`` — chat completion via the OpenAI API.
 - ``AnthropicLLM`` — messages via the Anthropic API (Claude).
 
+Retrieved passages are numbered in the prompt and the model is instructed to
+cite them as ``[1]``, ``[2]``, … — the numbers correspond 1:1 to the order of
+``Answer.sources`` returned by the GraphQL API.
+
 To add another provider, subclass ``LLM`` and register it in ``create_llm``.
 """
 
@@ -15,10 +19,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from .config import Settings
+from .vectorstore import SearchHit
 
 PROMPT_TEMPLATE = """\
-Answer the question using ONLY the context passages below. If the context does
-not contain the answer, say you don't know rather than guessing.
+Answer the question using ONLY the numbered context passages below. If the
+context does not contain the answer, say you don't know rather than guessing.
+Cite the passages you used with bracketed numbers, e.g. [1] or [2][3].
 
 Context:
 {context}
@@ -28,24 +34,32 @@ Question: {question}
 Answer:"""
 
 
-def build_prompt(question: str, context_chunks: list[str]) -> str:
-    context = "\n\n---\n\n".join(context_chunks) if context_chunks else "(no context found)"
+def format_passage(number: int, hit: SearchHit) -> str:
+    title = f" ({hit.document_title})" if hit.document_title else ""
+    return f"[{number}]{title}\n{hit.text}"
+
+
+def build_prompt(question: str, sources: list[SearchHit]) -> str:
+    if sources:
+        context = "\n\n".join(format_passage(i + 1, hit) for i, hit in enumerate(sources))
+    else:
+        context = "(no context found)"
     return PROMPT_TEMPLATE.format(context=context, question=question)
 
 
 class LLM(ABC):
     @abstractmethod
-    def generate(self, question: str, context_chunks: list[str]) -> str:
-        """Produce an answer to ``question`` grounded in ``context_chunks``."""
+    def generate(self, question: str, sources: list[SearchHit]) -> str:
+        """Produce an answer to ``question`` grounded in the retrieved ``sources``."""
 
 
 class ExtractiveLLM(LLM):
     """Key-free fallback: returns the top retrieved passages as the answer."""
 
-    def generate(self, question: str, context_chunks: list[str]) -> str:
-        if not context_chunks:
+    def generate(self, question: str, sources: list[SearchHit]) -> str:
+        if not sources:
             return "No relevant documents found for this question."
-        passages = "\n\n".join(context_chunks[:2])
+        passages = "\n\n".join(format_passage(i + 1, hit) for i, hit in enumerate(sources[:2]))
         return (
             "[extractive mode — configure GRAPHSEARCH_LLM=openai or anthropic "
             "for generated answers]\n\nMost relevant passages:\n\n" + passages
@@ -66,10 +80,10 @@ class OpenAILLM(LLM):
         self._client = OpenAI(api_key=api_key)
         self._model = model
 
-    def generate(self, question: str, context_chunks: list[str]) -> str:
+    def generate(self, question: str, sources: list[SearchHit]) -> str:
         response = self._client.chat.completions.create(
             model=self._model,
-            messages=[{"role": "user", "content": build_prompt(question, context_chunks)}],
+            messages=[{"role": "user", "content": build_prompt(question, sources)}],
         )
         return response.choices[0].message.content or ""
 
@@ -88,11 +102,11 @@ class AnthropicLLM(LLM):
         self._client = Anthropic(api_key=api_key)
         self._model = model
 
-    def generate(self, question: str, context_chunks: list[str]) -> str:
+    def generate(self, question: str, sources: list[SearchHit]) -> str:
         response = self._client.messages.create(
             model=self._model,
             max_tokens=1024,
-            messages=[{"role": "user", "content": build_prompt(question, context_chunks)}],
+            messages=[{"role": "user", "content": build_prompt(question, sources)}],
         )
         return "".join(block.text for block in response.content if block.type == "text")
 

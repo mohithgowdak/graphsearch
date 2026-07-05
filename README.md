@@ -1,5 +1,9 @@
 # GraphSearch
 
+[![CI](https://github.com/mohithgowdak/graphsearch/actions/workflows/ci.yml/badge.svg)](https://github.com/mohithgowdak/graphsearch/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+
 **A GraphQL API server for Retrieval-Augmented Generation (RAG) over your documents.**
 
 Upload documents through a GraphQL mutation, then ask questions through a GraphQL query.
@@ -10,8 +14,8 @@ behind a single, typed, introspectable GraphQL endpoint.
 ```graphql
 query {
   answer(question: "How do I reset my password?") {
-    text
-    sources { documentId text score }
+    text                                # cites sources as [1], [2], ...
+    sources { documentTitle text score }
   }
 }
 ```
@@ -62,23 +66,37 @@ query {
 docker compose up --build
 ```
 
-### Use real embeddings and an LLM
+### Semantic search without any API key
 
-Set the backends and keys via environment variables (or a `.env` file — see
-[.env.example](.env.example)):
+The `local` backend runs [sentence-transformers](https://www.sbert.net/)
+on your CPU — real semantic retrieval ("How do I get my money back?" finds
+the refund policy), still zero keys and zero external services:
 
 ```bash
-export GRAPHSEARCH_EMBEDDINGS=openai      # semantic embeddings
-export GRAPHSEARCH_LLM=anthropic          # generated answers via Claude
-export OPENAI_API_KEY=sk-...
+pip install -e ".[local]"
+export GRAPHSEARCH_EMBEDDINGS=local   # $env:GRAPHSEARCH_EMBEDDINGS='local' on Windows
+graphsearch-ingest data/example_docs  # re-ingest: embeddings are created at ingest time
+graphsearch
+```
+
+The default model (`all-MiniLM-L6-v2`, ~80 MB) downloads on first use.
+
+### Generated answers with citations
+
+Point the LLM stage at OpenAI or Anthropic and answers become generated
+text that cites its sources — `[1]`, `[2]`, … map 1:1 to the `sources`
+list returned alongside the answer:
+
+```bash
+export GRAPHSEARCH_LLM=anthropic          # or openai
 export ANTHROPIC_API_KEY=sk-ant-...
-pip install -e ".[openai,anthropic]"
+pip install -e ".[anthropic]"
 graphsearch
 ```
 
 | Setting | Options | Default |
 |---|---|---|
-| `GRAPHSEARCH_EMBEDDINGS` | `hash` (offline), `openai` | `hash` |
+| `GRAPHSEARCH_EMBEDDINGS` | `hash` (offline), `local` (offline, semantic), `openai` | `hash` |
 | `GRAPHSEARCH_LLM` | `extractive` (offline), `openai`, `anthropic` | `extractive` |
 
 > **Note:** documents are embedded at ingest time, so re-ingest after switching
@@ -125,8 +143,8 @@ query {
 ```
 Client ── GraphQL (FastAPI + Strawberry) ── RagService
                                               ├─ chunking       (paragraph-aware splitter)
-                                              ├─ Embedder       (hash | OpenAI)
-                                              ├─ VectorStore    (SQLite + numpy cosine search)
+                                              ├─ Embedder       (hash | sentence-transformers | OpenAI)
+                                              ├─ VectorStore    (SQLite-backed, in-memory cosine search)
                                               ├─ Database       (SQLite: documents, chunks, vectors)
                                               └─ LLM            (extractive | OpenAI | Anthropic)
 ```
@@ -145,7 +163,7 @@ pytest -v             # tests run fully offline
 ## Roadmap / good first issues
 
 - [ ] Additional vector store backends: Qdrant, Weaviate, Redis/Valkey, pgvector, FAISS
-- [ ] Additional embedding backends: sentence-transformers (local), Cohere, Voyage
+- [ ] Additional embedding backends: Cohere, Voyage
 - [ ] Streaming answers via GraphQL subscriptions
 - [ ] Metadata filters on `search` (tags, date ranges) and hybrid keyword+vector search
 - [ ] Auth (API keys / JWT) and rate limiting
