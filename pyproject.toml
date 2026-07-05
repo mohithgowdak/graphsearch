@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "graphsearch-rag"
-version = "0.2.1"
+version = "0.3.0"
 description = "GraphSearch: a GraphQL API server for Retrieval-Augmented Generation (RAG) over your documents"
 readme = "README.md"
 license = { text = "MIT" }
@@ -46,6 +46,9 @@ graphsearch-ingest = "graphsearch.ingest:main"
 
 [tool.setuptools.packages.find]
 include = ["graphsearch*"]
+
+[tool.setuptools.package-data]
+graphsearch = ["static/*.html"]
 
 [tool.ruff]
 line-length = 100

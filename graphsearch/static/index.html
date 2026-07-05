@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GraphSearch Playground</title>
+<style>
+  :root {
+    --accent: #e10098;
+    --bg: #f7f7fb;
+    --card: #ffffff;
+    --text: #1c1c28;
+    --muted: #6b6b80;
+    --border: #e4e4ee;
+    --code-bg: #16161e;
+    --code-text: #e6e6f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    max-width: 1100px; margin: 0 auto; padding: 28px 20px 8px;
+  }
+  header h1 { margin: 0; font-size: 22px; }
+  header h1 span { color: var(--accent); }
+  header .links { margin-left: auto; font-size: 14px; }
+  header a { color: var(--accent); text-decoration: none; }
+  header a:hover { text-decoration: underline; }
+  .tagline { max-width: 1100px; margin: 0 auto; padding: 0 20px 20px; color: var(--muted); }
+  main {
+    max-width: 1100px; margin: 0 auto; padding: 0 20px 60px;
+    display: grid; grid-template-columns: 5fr 7fr; gap: 20px;
+  }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 16px; }
+  .card .hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  textarea, input[type="text"] {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 11px; font: inherit; background: #fff; color: var(--text);
+  }
+  textarea { min-height: 110px; resize: vertical; font-family: ui-monospace, monospace; font-size: 13px; }
+  textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .row input { flex: 1; }
+  button {
+    border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 600;
+    background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .5; cursor: wait; }
+  button.ghost {
+    background: transparent; color: var(--accent);
+    border: 1px solid var(--accent); font-weight: 500;
+  }
+  .filedrop {
+    margin-top: 10px; border: 1.5px dashed var(--border); border-radius: 8px;
+    padding: 10px; text-align: center; color: var(--muted); font-size: 13px; cursor: pointer;
+  }
+  .filedrop.drag { border-color: var(--accent); color: var(--accent); }
+  #doclist { list-style: none; margin: 14px 0 0; padding: 0; }
+  #doclist li {
+    display: flex; align-items: center; gap: 8px; padding: 8px 4px;
+    border-top: 1px solid var(--border); font-size: 14px;
+  }
+  #doclist .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #doclist .chunks { color: var(--muted); font-size: 12px; }
+  #doclist .del {
+    background: none; border: 0; color: var(--muted); font-size: 16px;
+    padding: 2px 6px; cursor: pointer;
+  }
+  #doclist .del:hover { color: #d33; }
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 4px; }
+  .answer {
+    margin-top: 14px; padding: 14px; border-radius: 8px;
+    background: #fdf3fa; border: 1px solid #f3cce6; white-space: pre-wrap;
+    font-size: 14px; display: none;
+  }
+  .source {
+    margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px;
+  }
+  .source .meta { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+  .source .name { font-weight: 600; }
+  .source .bar {
+    flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+  }
+  .source .bar i { display: block; height: 100%; background: var(--accent); }
+  .source .pct { color: var(--muted); font-size: 12px; min-width: 40px; text-align: right; }
+  .source .snippet { color: var(--muted); max-height: 72px; overflow: hidden; white-space: pre-wrap; }
+  details.gql { margin-top: 14px; }
+  details.gql summary {
+    cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600;
+  }
+  details.gql pre {
+    background: var(--code-bg); color: var(--code-text); border-radius: 8px;
+    padding: 14px; overflow: auto; font-size: 12.5px; line-height: 1.55; margin: 8px 0 0;
+  }
+  .status { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 18px; }
+  .status.err { color: #d33; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Graph<span>Search</span> Playground</h1>
+  <nav class="links">
+    <a href="/graphql">GraphiQL →</a> &nbsp;·&nbsp;
+    <a href="https://github.com/mohithgowdak/graphsearch" rel="noopener">GitHub</a>
+  </nav>
+</header>
+<p class="tagline">
+  Test RAG over <strong>your own documents</strong> before writing a line of client code.
+  Every action shows the exact GraphQL it runs — copy it straight into your app.
+</p>
+<main>
+  <section class="card">
+    <h2>1 · Add your documents</h2>
+    <p class="hint">Paste text or drop .md / .txt files. They're chunked, embedded, and indexed instantly.</p>
+    <textarea id="content" placeholder="Paste any text, markdown, FAQ, policy, notes..."></textarea>
+    <div class="row">
+      <input id="title" type="text" placeholder="Title (optional)">
+      <button id="addBtn">Add document</button>
+    </div>
+    <div class="filedrop" id="drop">…or click / drop files here</div>
+    <input id="file" type="file" accept=".md,.txt,.markdown,.rst" multiple hidden>
+    <ul id="doclist"></ul>
+    <div class="status" id="docStatus"></div>
+    <details class="gql">
+      <summary>Show the GraphQL</summary>
+      <pre id="docGql">mutation Upload($content: String!, $title: String) {
+  uploadDocument(content: $content, title: $title) {
+    id
+    title
+    chunkCount
+  }
+}</pre>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>2 · Ask questions</h2>
+    <p class="hint">Answers are grounded in your documents, with ranked sources.</p>
+    <div class="row" style="margin-top:0">
+      <input id="question" type="text" placeholder="Ask anything about your documents...">
+      <button id="askBtn">Answer</button>
+      <button id="searchBtn" class="ghost">Search only</button>
+    </div>
+    <div class="status" id="askStatus"></div>
+    <div class="answer" id="answer"></div>
+    <div id="sources"></div>
+    <details class="gql">
+      <summary>Show the GraphQL</summary>
+      <pre id="askGql">query Ask($question: String!) {
+  answer(question: $question) {
+    text
+    sources { documentTitle text score }
+  }
+}</pre>
+    </details>
+  </section>
+</main>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+
+  const QUERIES = {
+    upload: `mutation Upload($content: String!, $title: String) {
+  uploadDocument(content: $content, title: $title) { id title chunkCount }
+}`,
+    docs: `query { documents(limit: 50) { id title chunkCount } }`,
+    del: `mutation Delete($id: ID!) { deleteDocument(id: $id) }`,
+    answer: `query Ask($question: String!) {
+  answer(question: $question) {
+    text
+    sources { documentTitle text score }
+  }
+}`,
+    search: `query Search($query: String!) {
+  search(query: $query) { documentTitle text score }
+}`,
+  };
+
+  async function gql(query, variables) {
+    const res = await fetch("/graphql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+    });
+    const payload = await res.json();
+    if (payload.errors) throw new Error(payload.errors.map((e) => e.message).join("; "));
+    return payload.data;
+  }
+
+  function setStatus(el, msg, isError) {
+    el.textContent = msg || "";
+    el.classList.toggle("err", Boolean(isError));
+  }
+
+  // ----- documents -----
+  async function refreshDocs() {
+    const data = await gql(QUERIES.docs);
+    const list = $("doclist");
+    list.replaceChildren();
+    if (!data.documents.length) {
+      const li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "No documents yet — add one above to get started.";
+      list.appendChild(li);
+      return;
+    }
+    for (const doc of data.documents) {
+      const li = document.createElement("li");
+      const title = document.createElement("span");
+      title.className = "title";
+      title.textContent = doc.title || "(untitled)";
+      const chunks = document.createElement("span");
+      chunks.className = "chunks";
+      chunks.textContent = doc.chunkCount + (doc.chunkCount === 1 ? " chunk" : " chunks");
+      const del = document.createElement("button");
+      del.className = "del";
+      del.title = "Delete document";
+      del.textContent = "✕";
+      del.addEventListener("click", async () => {
+        await gql(QUERIES.del, { id: doc.id });
+        refreshDocs();
+      });
+      li.append(title, chunks, del);
+      list.appendChild(li);
+    }
+  }
+
+  async function addDocument(content, title) {
+    const trimmed = (content || "").trim();
+    if (!trimmed) {
+      setStatus($("docStatus"), "Nothing to add — paste some text first.", true);
+      return;
+    }
+    $("addBtn").disabled = true;
+    try {
+      const data = await gql(QUERIES.upload, { content: trimmed, title: title || null });
+      setStatus($("docStatus"),
+        `Indexed "${data.uploadDocument.title || "untitled"}" (${data.uploadDocument.chunkCount} chunks).`);
+      $("content").value = "";
+      $("title").value = "";
+      refreshDocs();
+    } catch (err) {
+      setStatus($("docStatus"), err.message, true);
+    } finally {
+      $("addBtn").disabled = false;
+    }
+  }
+
+  $("addBtn").addEventListener("click", () => addDocument($("content").value, $("title").value));
+
+  // file drop / picker
+  const drop = $("drop");
+  drop.addEventListener("click", () => $("file").click());
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("drag"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.classList.remove("drag");
+    ingestFiles(e.dataTransfer.files);
+  });
+  $("file").addEventListener("change", (e) => ingestFiles(e.target.files));
+
+  async function ingestFiles(files) {
+    for (const file of files) {
+      const text = await file.text();
+      await addDocument(text, file.name.replace(/\.[^.]+$/, ""));
+    }
+  }
+
+  // ----- ask / search -----
+  function renderSources(sources) {
+    const wrap = $("sources");
+    wrap.replaceChildren();
+    sources.forEach((src, i) => {
+      const div = document.createElement("div");
+      div.className = "source";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = `[${i + 1}] ${src.documentTitle || "untitled"}`;
+      const bar = document.createElement("span");
+      bar.className = "bar";
+      const fill = document.createElement("i");
+      fill.style.width = Math.round(Math.max(0, Math.min(1, src.score)) * 100) + "%";
+      bar.appendChild(fill);
+      const pct = document.createElement("span");
+      pct.className = "pct";
+      pct.textContent = src.score.toFixed(3);
+      meta.append(name, bar, pct);
+      const snippet = document.createElement("div");
+      snippet.className = "snippet";
+      snippet.textContent = src.text;
+      div.append(meta, snippet);
+      wrap.appendChild(div);
+    });
+  }
+
+  async function run(kind) {
+    const question = $("question").value.trim();
+    if (!question) {
+      setStatus($("askStatus"), "Type a question first.", true);
+      return;
+    }
+    const btn = kind === "answer" ? $("askBtn") : $("searchBtn");
+    btn.disabled = true;
+    setStatus($("askStatus"), "Running…");
+    $("answer").style.display = "none";
+    $("sources").replaceChildren();
+    $("askGql").textContent = kind === "answer" ? QUERIES.answer : QUERIES.search;
+    try {
+      if (kind === "answer") {
+        const data = await gql(QUERIES.answer, { question });
+        $("answer").textContent = data.answer.text;
+        $("answer").style.display = "block";
+        renderSources(data.answer.sources);
+      } else {
+        const data = await gql(QUERIES.search, { query: question });
+        renderSources(data.search);
+      }
+      setStatus($("askStatus"), "");
+    } catch (err) {
+      setStatus($("askStatus"), err.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  $("askBtn").addEventListener("click", () => run("answer"));
+  $("searchBtn").addEventListener("click", () => run("search"));
+  $("question").addEventListener("keydown", (e) => { if (e.key === "Enter") run("answer"); });
+
+  refreshDocs().catch((err) => setStatus($("docStatus"), err.message, true));
+})();
+</script>
+</body>
+</html>

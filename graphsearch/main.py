@@ -1,10 +1,18 @@
-"""FastAPI application entrypoint. GraphQL is served at /graphql with GraphiQL enabled."""
+"""FastAPI application entrypoint.
+
+Routes:
+- ``/``        — the Playground UI: test ingestion and Q&A with your own docs
+- ``/graphql`` — the GraphQL endpoint, with GraphiQL enabled
+- ``/health``  — liveness probe
+"""
 
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from importlib import resources
 
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from strawberry.fastapi import GraphQLRouter
 
 from . import __version__
@@ -29,6 +37,14 @@ def create_app(settings: Settings | None = None, rag_service: RagService | None 
 
     graphql_router: GraphQLRouter = GraphQLRouter(schema, context_getter=get_context)
     app.include_router(graphql_router, prefix="/graphql")
+
+    playground_html = (
+        resources.files("graphsearch").joinpath("static/index.html").read_text(encoding="utf-8")
+    )
+
+    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+    async def playground() -> str:
+        return playground_html
 
     @app.get("/health")
     async def health() -> dict:

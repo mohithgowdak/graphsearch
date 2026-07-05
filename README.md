@@ -60,7 +60,13 @@ graphsearch-ingest data/example_docs
 graphsearch
 ```
 
-Open **http://localhost:8000/graphql** for the GraphiQL playground and try:
+Then open:
+
+- **http://localhost:8000/** — the **Playground**: drop in your own documents and
+  ask questions from the browser, no GraphQL knowledge needed. Every action has a
+  "Show the GraphQL" toggle revealing the exact query it runs, so you can copy it
+  straight into your app.
+- **http://localhost:8000/graphql** — GraphiQL, for writing queries by hand:
 
 ```graphql
 query {
@@ -70,6 +76,8 @@ query {
   }
 }
 ```
+
+![The GraphSearch Playground: your documents on the left, grounded answers with ranked sources on the right](docs/playground.png)
 
 ### Run with Docker
 

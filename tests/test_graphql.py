@@ -26,6 +26,13 @@ def test_health_endpoint(client):
     assert response.json()["status"] == "ok"
 
 
+def test_playground_ui_is_served_at_root(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "GraphSearch Playground" in response.text
+
+
 def test_upload_and_answer_roundtrip(client):
     data = graphql(
         client,
