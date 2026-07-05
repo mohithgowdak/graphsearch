@@ -9,11 +9,14 @@ I/O (SQLite, provider APIs) never stalls the event loop.
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 import strawberry
+from strawberry.file_uploads import Upload
 from strawberry.types import Info
 
 from .db import DocumentRecord
+from .extract import extract_text
 from .rag import RagService
 from .vectorstore import SearchHit
 
@@ -104,6 +107,28 @@ class Mutation:
         source: str | None = None,
     ) -> Document:
         record = await asyncio.to_thread(_service(info).ingest, content, title, source)
+        return Document.from_record(record)
+
+    @strawberry.mutation(
+        description="Upload a file (PDF, Markdown, or plain text): its text is "
+        "extracted, chunked, embedded, and indexed. Sent as a GraphQL multipart request."
+    )
+    async def upload_file(
+        self,
+        info: Info,
+        file: Upload,
+        title: str | None = None,
+        source: str | None = None,
+    ) -> Document:
+        filename = getattr(file, "filename", None) or "upload"
+        data = await file.read()
+        content = await asyncio.to_thread(extract_text, filename, data)
+        record = await asyncio.to_thread(
+            _service(info).ingest,
+            content,
+            title or Path(filename).stem,
+            source or filename,
+        )
         return Document.from_record(record)
 
     @strawberry.mutation(description="Delete a document and its indexed chunks.")

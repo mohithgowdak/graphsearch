@@ -35,7 +35,12 @@ def create_app(settings: Settings | None = None, rag_service: RagService | None 
     async def get_context() -> dict:
         return {"rag_service": service}
 
-    graphql_router: GraphQLRouter = GraphQLRouter(schema, context_getter=get_context)
+    graphql_router: GraphQLRouter = GraphQLRouter(
+        schema,
+        context_getter=get_context,
+        # Required for the uploadFile mutation (GraphQL multipart request spec).
+        multipart_uploads_enabled=True,
+    )
     app.include_router(graphql_router, prefix="/graphql")
 
     playground_html = (

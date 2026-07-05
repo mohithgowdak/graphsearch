@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "graphsearch-rag"
-version = "0.3.0"
+version = "0.4.0"
 description = "GraphSearch: a GraphQL API server for Retrieval-Augmented Generation (RAG) over your documents"
 readme = "README.md"
 license = { text = "MIT" }
@@ -24,6 +24,8 @@ dependencies = [
     "uvicorn[standard]>=0.29",
     "pydantic-settings>=2.2",
     "numpy>=1.26",
+    "pypdf>=4.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]

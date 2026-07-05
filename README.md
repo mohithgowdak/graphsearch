@@ -53,7 +53,7 @@ extractive answer mode. It exercises the entire pipeline and is perfect for
 kicking the tires, tests, and CI.
 
 ```bash
-# Ingest some documents (bundled examples shown; any .md/.txt works)
+# Ingest some documents (bundled examples shown; .pdf/.md/.txt all work)
 graphsearch-ingest data/example_docs
 
 # Start the server
@@ -62,10 +62,10 @@ graphsearch
 
 Then open:
 
-- **http://localhost:8000/** — the **Playground**: drop in your own documents and
-  ask questions from the browser, no GraphQL knowledge needed. Every action has a
-  "Show the GraphQL" toggle revealing the exact query it runs, so you can copy it
-  straight into your app.
+- **http://localhost:8000/** — the **Playground**: drop in your own documents
+  (PDF, Markdown, plain text) and ask questions from the browser, no GraphQL
+  knowledge needed. Every action has a "Show the GraphQL" toggle revealing the
+  exact query it runs, so you can copy it straight into your app.
 - **http://localhost:8000/graphql** — GraphiQL, for writing queries by hand:
 
 ```graphql
@@ -136,8 +136,13 @@ document(id: ID!): Document
 
 ```graphql
 uploadDocument(content: String!, title: String, source: String): Document!
+uploadFile(file: Upload!, title: String, source: String): Document!   # PDF/Markdown/text, multipart
 deleteDocument(id: ID!): Boolean!
 ```
+
+`uploadFile` follows the [GraphQL multipart request spec](https://github.com/jaydenseric/graphql-multipart-request-spec);
+PDF text extraction happens server-side via pypdf (scanned/image-only PDFs are
+rejected with a hint to OCR them first).
 
 ### Example: ingest and ask in one session
 

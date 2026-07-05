@@ -1,4 +1,7 @@
+import json
+
 from tests.conftest import graphql
+from tests.pdf_fixture import make_pdf
 
 UPLOAD = """
 mutation Upload($content: String!, $title: String) {
@@ -77,6 +80,47 @@ def test_documents_listing_and_delete(client):
 def test_document_by_id_returns_null_when_missing(client):
     data = graphql(client, 'query { document(id: "does-not-exist") { id } }')
     assert data["document"] is None
+
+
+UPLOAD_FILE = """
+mutation UploadFile($file: Upload!, $title: String) {
+  uploadFile(file: $file, title: $title) { id title chunkCount }
+}
+"""
+
+
+def _upload_file(client, filename, data, content_type):
+    return client.post(
+        "/graphql",
+        data={
+            "operations": json.dumps(
+                {"query": UPLOAD_FILE, "variables": {"file": None, "title": None}}
+            ),
+            "map": json.dumps({"0": ["variables.file"]}),
+        },
+        files={"0": (filename, data, content_type)},
+    )
+
+
+def test_upload_pdf_file_and_query_it(client):
+    pdf = make_pdf("The warranty period is two years from purchase.")
+    response = _upload_file(client, "warranty.pdf", pdf, "application/pdf")
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert "errors" not in payload, payload.get("errors")
+    doc = payload["data"]["uploadFile"]
+    assert doc["title"] == "warranty"  # defaults to the filename stem
+    assert doc["chunkCount"] >= 1
+
+    data = graphql(client, "query { search(query: \"how long is the warranty\") { text } }")
+    assert "two years" in data["search"][0]["text"]
+
+
+def test_upload_text_file_via_multipart(client):
+    response = _upload_file(client, "notes.md", b"# Team\n\nStandup is at 9:30.", "text/markdown")
+    payload = response.json()
+    assert "errors" not in payload, payload.get("errors")
+    assert payload["data"]["uploadFile"]["title"] == "notes"
 
 
 def test_empty_upload_returns_graphql_error(client):

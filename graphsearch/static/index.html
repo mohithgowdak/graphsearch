@@ -121,20 +121,30 @@
 <main>
   <section class="card">
     <h2>1 · Add your documents</h2>
-    <p class="hint">Paste text or drop .md / .txt files. They're chunked, embedded, and indexed instantly.</p>
+    <p class="hint">Paste text or drop PDF / Markdown / text files. They're chunked, embedded, and indexed instantly.</p>
     <textarea id="content" placeholder="Paste any text, markdown, FAQ, policy, notes..."></textarea>
     <div class="row">
       <input id="title" type="text" placeholder="Title (optional)">
       <button id="addBtn">Add document</button>
     </div>
-    <div class="filedrop" id="drop">…or click / drop files here</div>
-    <input id="file" type="file" accept=".md,.txt,.markdown,.rst" multiple hidden>
+    <div class="filedrop" id="drop">…or click / drop files here (.pdf, .md, .txt)</div>
+    <input id="file" type="file" accept=".md,.txt,.markdown,.rst,.pdf" multiple hidden>
     <ul id="doclist"></ul>
     <div class="status" id="docStatus"></div>
     <details class="gql">
       <summary>Show the GraphQL</summary>
-      <pre id="docGql">mutation Upload($content: String!, $title: String) {
+      <pre id="docGql"># pasted text:
+mutation Upload($content: String!, $title: String) {
   uploadDocument(content: $content, title: $title) {
+    id
+    title
+    chunkCount
+  }
+}
+
+# files (PDF/Markdown/text) as a GraphQL multipart request:
+mutation UploadFile($file: Upload!, $title: String) {
+  uploadFile(file: $file, title: $title) {
     id
     title
     chunkCount
@@ -176,6 +186,9 @@
 }`,
     docs: `query { documents(limit: 50) { id title chunkCount } }`,
     del: `mutation Delete($id: ID!) { deleteDocument(id: $id) }`,
+    uploadFile: `mutation UploadFile($file: Upload!, $title: String) {
+  uploadFile(file: $file, title: $title) { id title chunkCount }
+}`,
     answer: `query Ask($question: String!) {
   answer(question: $question) {
     text
@@ -273,9 +286,26 @@
 
   async function ingestFiles(files) {
     for (const file of files) {
-      const text = await file.text();
-      await addDocument(text, file.name.replace(/\.[^.]+$/, ""));
+      setStatus($("docStatus"), `Uploading ${file.name}…`);
+      try {
+        // GraphQL multipart request spec: server extracts text (incl. PDFs).
+        const form = new FormData();
+        form.append("operations", JSON.stringify({
+          query: QUERIES.uploadFile,
+          variables: { file: null, title: file.name.replace(/\.[^.]+$/, "") },
+        }));
+        form.append("map", JSON.stringify({ "0": ["variables.file"] }));
+        form.append("0", file);
+        const res = await fetch("/graphql", { method: "POST", body: form });
+        const payload = await res.json();
+        if (payload.errors) throw new Error(payload.errors.map((e) => e.message).join("; "));
+        const doc = payload.data.uploadFile;
+        setStatus($("docStatus"), `Indexed "${doc.title}" (${doc.chunkCount} chunks).`);
+      } catch (err) {
+        setStatus($("docStatus"), `${file.name}: ${err.message}`, true);
+      }
     }
+    refreshDocs();
   }
 
   // ----- ask / search -----

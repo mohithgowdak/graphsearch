@@ -1,7 +1,8 @@
-"""CLI for bulk-ingesting documents from a directory.
+"""CLI for bulk-ingesting documents (text, Markdown, PDF) from a directory.
 
 Usage:
     graphsearch-ingest data/example_docs
+    graphsearch-ingest report.pdf
     python -m graphsearch.ingest data/example_docs
 """
 
@@ -12,9 +13,8 @@ import sys
 from pathlib import Path
 
 from .config import get_settings
+from .extract import SUPPORTED_SUFFIXES, extract_text
 from .rag import RagService
-
-SUPPORTED_SUFFIXES = {".txt", ".md", ".markdown", ".rst"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -38,14 +38,19 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     service = RagService(get_settings())
+    exit_code = 0
     try:
         for path in files:
-            content = path.read_text(encoding="utf-8")
-            record = service.ingest(content, title=path.stem, source=str(path))
-            print(f"ingested {path} -> {record.id} ({record.chunk_count} chunks)")
+            try:
+                content = extract_text(path.name, path.read_bytes())
+                record = service.ingest(content, title=path.stem, source=str(path))
+                print(f"ingested {path} -> {record.id} ({record.chunk_count} chunks)")
+            except ValueError as exc:
+                print(f"skipped {path}: {exc}", file=sys.stderr)
+                exit_code = 1
     finally:
         service.close()
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":
