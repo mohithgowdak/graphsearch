@@ -60,6 +60,16 @@ graphsearch-ingest data/example_docs
 graphsearch
 ```
 
+> **`graphsearch` not recognized?** With `pip install --user` (the default on
+> Windows when site-packages isn't writable), pip puts console commands in a
+> Scripts folder that may not be on PATH. Either add it to PATH
+> (`%APPDATA%\Python\Python3xx\Scripts` on Windows), or skip PATH entirely:
+>
+> ```bash
+> python -m graphsearch                            # start the server
+> python -m graphsearch.ingest data/example_docs  # ingest documents
+> ```
+
 Then open:
 
 - **http://localhost:8000/** — the **Playground**: drop in your own documents
