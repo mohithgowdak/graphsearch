@@ -5,7 +5,7 @@ name: Release
 #
 # Publishes:
 #   - the package to PyPI (via trusted publishing — configure the repo as a
-#     publisher for the 'graphsearch' project at
+#     publisher for the 'graphsearch-rag' project at
 #     https://pypi.org/manage/account/publishing/ with workflow 'release.yml'
 #     and environment 'pypi')
 #   - the Docker image to GitHub Container Registry
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/graphsearch
+      url: https://pypi.org/p/graphsearch-rag
     permissions:
       id-token: write # OIDC for PyPI trusted publishing
     steps:

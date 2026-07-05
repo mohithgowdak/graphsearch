@@ -73,7 +73,7 @@ class OpenAILLM(LLM):
         except ImportError as exc:  # pragma: no cover
             raise RuntimeError(
                 "The 'openai' package is required for GRAPHSEARCH_LLM=openai. "
-                "Install it with: pip install graphsearch[openai]"
+                "Install it with: pip install graphsearch-rag[openai]"
             ) from exc
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY must be set for GRAPHSEARCH_LLM=openai")
@@ -95,7 +95,7 @@ class AnthropicLLM(LLM):
         except ImportError as exc:  # pragma: no cover
             raise RuntimeError(
                 "The 'anthropic' package is required for GRAPHSEARCH_LLM=anthropic. "
-                "Install it with: pip install graphsearch[anthropic]"
+                "Install it with: pip install graphsearch-rag[anthropic]"
             ) from exc
         if not api_key:
             raise RuntimeError("ANTHROPIC_API_KEY must be set for GRAPHSEARCH_LLM=anthropic")

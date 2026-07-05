@@ -3,8 +3,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "graphsearch"
-version = "0.2.0"
+name = "graphsearch-rag"
+version = "0.2.1"
 description = "GraphSearch: a GraphQL API server for Retrieval-Augmented Generation (RAG) over your documents"
 readme = "README.md"
 license = { text = "MIT" }

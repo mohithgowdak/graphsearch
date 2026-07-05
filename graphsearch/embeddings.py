@@ -69,7 +69,7 @@ class LocalEmbedder(Embedder):
             raise RuntimeError(
                 "The 'sentence-transformers' package is required for "
                 "GRAPHSEARCH_EMBEDDINGS=local. "
-                "Install it with: pip install graphsearch[local]"
+                "Install it with: pip install graphsearch-rag[local]"
             ) from exc
         self._model = SentenceTransformer(model)
         # Renamed in newer sentence-transformers releases; support both.
@@ -94,7 +94,7 @@ class OpenAIEmbedder(Embedder):
         except ImportError as exc:  # pragma: no cover
             raise RuntimeError(
                 "The 'openai' package is required for GRAPHSEARCH_EMBEDDINGS=openai. "
-                "Install it with: pip install graphsearch[openai]"
+                "Install it with: pip install graphsearch-rag[openai]"
             ) from exc
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY must be set for GRAPHSEARCH_EMBEDDINGS=openai")

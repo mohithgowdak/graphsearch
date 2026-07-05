@@ -38,7 +38,7 @@ query {
 ### Install
 
 ```bash
-pip install graphsearch            # from PyPI
+pip install graphsearch-rag        # from PyPI (imports as `graphsearch`)
 # or run the prebuilt image:
 docker run -p 8000:8000 ghcr.io/mohithgowdak/graphsearch:latest
 # or from source:
