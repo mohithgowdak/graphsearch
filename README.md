@@ -1,160 +1,134 @@
-# GraphSearch
+<div align="center">
+
+<h1>⚡ GraphSearch</h1>
+
+<p><strong>Ask questions. Get grounded answers. One GraphQL endpoint.</strong></p>
+
+<p>Turn any pile of documents — PDFs, Markdown, plain text — into a typed,<br>
+introspectable Q&amp;A API. Zero API keys, zero infrastructure to start.</p>
 
 [![CI](https://github.com/mohithgowdak/graphsearch/actions/workflows/ci.yml/badge.svg)](https://github.com/mohithgowdak/graphsearch/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/graphsearch-rag?color=e10098&label=PyPI)](https://pypi.org/project/graphsearch-rag/)
+[![Python](https://img.shields.io/pypi/pyversions/graphsearch-rag?color=blue)](https://pypi.org/project/graphsearch-rag/)
+[![Docker](https://img.shields.io/badge/ghcr.io-graphsearch-2496ED?logo=docker&logoColor=white)](https://github.com/mohithgowdak/graphsearch/pkgs/container/graphsearch)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
-**A GraphQL API server for Retrieval-Augmented Generation (RAG) over your documents.**
+<p>
+<a href="#-quickstart">Quickstart</a> ·
+<a href="#-the-playground">Playground</a> ·
+<a href="#-graphql-api">API</a> ·
+<a href="#-architecture">Architecture</a> ·
+<a href="#-roadmap--good-first-issues">Roadmap</a> ·
+<a href="#-contributing">Contributing</a>
+</p>
 
-Upload documents through a GraphQL mutation, then ask questions through a GraphQL query.
-GraphSearch chunks and embeds your documents, retrieves the most relevant passages with
-vector similarity search, and feeds them to an LLM to generate a grounded answer — all
-behind a single, typed, introspectable GraphQL endpoint.
+<img src="docs/demo.gif" alt="GraphSearch demo: asking a question in GraphiQL and getting a grounded answer with ranked sources" width="850">
 
-```graphql
-query {
-  answer(question: "How do I reset my password?") {
-    text                                # cites sources as [1], [2], ...
-    sources { documentTitle text score }
-  }
-}
-```
+<p><em>"How do I get my money back?" finds the returns policy — no shared keywords, no API keys.</em></p>
 
-![GraphSearch demo: asking "How do I get my money back?" in GraphiQL and getting the returns policy with ranked sources](docs/demo.gif)
+</div>
 
-*Semantic retrieval with the offline `local` backend: "How do I get my money back?" finds the returns policy — no shared keywords needed.*
+---
 
-## Why GraphQL for RAG?
+## ✨ Why GraphSearch?
 
-- **One endpoint, typed schema** — clients ask for exactly the fields they need
-  (answer text, source chunks, scores) instead of juggling REST routes.
-- **Introspection & tooling for free** — GraphiQL, codegen'd TypeScript clients,
-  and schema docs come with the ecosystem.
-- **Composable** — `answer`, `search`, and document management live in one schema
-  and can be combined in a single request.
+|  |  |
+|---|---|
+| 🔍 **Semantic search, zero keys** | Ships with offline embeddings — `pip install` and ask questions. Add sentence-transformers for real semantic retrieval, still 100% local. |
+| 📎 **Grounded, cited answers** | Answers cite their sources as `[1]`, `[2]`, … mapping 1:1 to returned chunks with relevance scores. No hallucination hand-waving. |
+| 📄 **PDFs welcome** | Drop PDF / Markdown / text files into the Playground, the `uploadFile` mutation, or the CLI — text extraction is built in. |
+| 🧬 **One typed endpoint** | GraphQL means clients fetch exactly the fields they need, with introspection, GraphiQL, and codegen'd clients for free. |
+| 🔌 **Pluggable everything** | Embedder, vector store, and LLM are clean interfaces. Swap OpenAI ↔ Claude ↔ offline modes with one env var. |
+| 🪶 **No infrastructure** | SQLite + numpy under the hood. No vector DB cluster, no queue, no Redis — until *you* decide you need one. |
 
-## Quickstart
-
-### Install
+## 🚀 Quickstart
 
 ```bash
-pip install graphsearch-rag        # from PyPI (imports as `graphsearch`)
-# or run the prebuilt image:
+pip install graphsearch-rag        # imports as `graphsearch`
+```
+
+```bash
+graphsearch-ingest data/example_docs   # or your own .pdf / .md / .txt
+graphsearch                            # → http://localhost:8000
+```
+
+That's it — no API keys, no services, no config. Prefer containers?
+
+```bash
 docker run -p 8000:8000 ghcr.io/mohithgowdak/graphsearch:latest
-# or from source:
-git clone https://github.com/mohithgowdak/graphsearch && cd graphsearch
-pip install -e ".[dev]"
 ```
 
-### Run locally (no API keys needed)
-
-The default configuration is fully offline: a hashing-trick embedder plus an
-extractive answer mode. It exercises the entire pipeline and is perfect for
-kicking the tires, tests, and CI.
-
-```bash
-# Ingest some documents (bundled examples shown; .pdf/.md/.txt all work)
-graphsearch-ingest data/example_docs
-
-# Start the server
-graphsearch
-```
-
-> **`graphsearch` not recognized?** With `pip install --user` (the default on
-> Windows when site-packages isn't writable), pip puts console commands in a
-> Scripts folder that may not be on PATH. Either add it to PATH
-> (`%APPDATA%\Python\Python3xx\Scripts` on Windows), or skip PATH entirely:
+> **`graphsearch` not recognized?** With `pip install --user` (Windows default
+> when site-packages isn't writable), pip's Scripts folder may not be on PATH.
+> Skip PATH entirely:
 >
 > ```bash
 > python -m graphsearch                            # start the server
-> python -m graphsearch.ingest data/example_docs  # ingest documents
+> python -m graphsearch.ingest data/example_docs   # ingest documents
 > ```
 
-Then open:
+## 🎮 The Playground
 
-- **http://localhost:8000/** — the **Playground**: drop in your own documents
-  (PDF, Markdown, plain text) and ask questions from the browser, no GraphQL
-  knowledge needed. Every action has a "Show the GraphQL" toggle revealing the
-  exact query it runs, so you can copy it straight into your app.
-- **http://localhost:8000/graphql** — GraphiQL, for writing queries by hand:
+Open **http://localhost:8000/** and test RAG **with your own documents** before
+writing a line of client code — paste text or drop files, ask questions, inspect
+ranked sources. Every action has a **"Show the GraphQL"** toggle revealing the
+exact query it runs, ready to copy into your app.
 
-```graphql
-query {
-  answer(question: "What is the return policy?") {
-    text
-    sources { text score }
-  }
-}
-```
+<div align="center">
+<img src="docs/playground.png" alt="The GraphSearch Playground: your documents on the left, grounded answers with ranked sources on the right" width="850">
+</div>
 
-![The GraphSearch Playground: your documents on the left, grounded answers with ranked sources on the right](docs/playground.png)
+Prefer raw GraphQL? **GraphiQL** lives at http://localhost:8000/graphql.
 
-### Run with Docker
+## 🎚 Level up the pipeline
 
-```bash
-docker compose up --build
-```
+The default mode is fully offline (hashing-trick embeddings + extractive
+answers) so the whole pipeline runs anywhere, including CI. Upgrade each stage
+independently:
 
-### Semantic search without any API key
-
-The `local` backend runs [sentence-transformers](https://www.sbert.net/)
-on your CPU — real semantic retrieval ("How do I get my money back?" finds
-the refund policy), still zero keys and zero external services:
+**Real semantic search — still no API key** (sentence-transformers, ~80 MB model, CPU):
 
 ```bash
-pip install -e ".[local]"
-export GRAPHSEARCH_EMBEDDINGS=local   # $env:GRAPHSEARCH_EMBEDDINGS='local' on Windows
-graphsearch-ingest data/example_docs  # re-ingest: embeddings are created at ingest time
+pip install "graphsearch-rag[local]"
+export GRAPHSEARCH_EMBEDDINGS=local    # $env:GRAPHSEARCH_EMBEDDINGS='local' on Windows
+graphsearch-ingest data/example_docs   # re-ingest: embeddings are created at ingest time
 graphsearch
 ```
 
-The default model (`all-MiniLM-L6-v2`, ~80 MB) downloads on first use.
-
-### Generated answers with citations
-
-Point the LLM stage at OpenAI or Anthropic and answers become generated
-text that cites its sources — `[1]`, `[2]`, … map 1:1 to the `sources`
-list returned alongside the answer:
+**LLM-generated answers with citations** (OpenAI or Anthropic):
 
 ```bash
-export GRAPHSEARCH_LLM=anthropic          # or openai
+pip install "graphsearch-rag[anthropic]"   # or [openai]
+export GRAPHSEARCH_LLM=anthropic           # or openai
 export ANTHROPIC_API_KEY=sk-ant-...
-pip install -e ".[anthropic]"
 graphsearch
 ```
 
 | Setting | Options | Default |
 |---|---|---|
-| `GRAPHSEARCH_EMBEDDINGS` | `hash` (offline), `local` (offline, semantic), `openai` | `hash` |
-| `GRAPHSEARCH_LLM` | `extractive` (offline), `openai`, `anthropic` | `extractive` |
+| `GRAPHSEARCH_EMBEDDINGS` | `hash` (offline) · `local` (offline, semantic) · `openai` | `hash` |
+| `GRAPHSEARCH_LLM` | `extractive` (offline) · `openai` · `anthropic` | `extractive` |
 
-> **Note:** documents are embedded at ingest time, so re-ingest after switching
-> embedding backends.
+> Documents are embedded at ingest time — re-ingest after switching embedding backends.
+> Full configuration reference: [.env.example](.env.example)
 
-## GraphQL API
-
-### Queries
+## 🧩 GraphQL API
 
 ```graphql
-answer(question: String!, topK: Int): Answer!      # RAG: retrieve + generate
+# Queries
+answer(question: String!, topK: Int): Answer!      # RAG: retrieve + generate, with cited sources
 search(query: String!, topK: Int): [Chunk!]!       # raw semantic search
 documents(limit: Int = 20, offset: Int = 0): [Document!]!
 document(id: ID!): Document
-```
 
-### Mutations
-
-```graphql
+# Mutations
 uploadDocument(content: String!, title: String, source: String): Document!
-uploadFile(file: Upload!, title: String, source: String): Document!   # PDF/Markdown/text, multipart
+uploadFile(file: Upload!, title: String, source: String): Document!    # PDF/Markdown/text
 deleteDocument(id: ID!): Boolean!
 ```
 
-`uploadFile` follows the [GraphQL multipart request spec](https://github.com/jaydenseric/graphql-multipart-request-spec);
-PDF text extraction happens server-side via pypdf (scanned/image-only PDFs are
-rejected with a hint to OCR them first).
-
-### Example: ingest and ask in one session
+<details>
+<summary><strong>Example: ingest and ask in one session</strong></summary>
 
 ```graphql
 mutation {
@@ -166,51 +140,79 @@ mutation {
 
 query {
   answer(question: "When is support available?") {
-    text
-    sources { documentId score }
+    text                                 # cites sources as [1], [2], ...
+    sources { documentTitle text score }
   }
 }
 ```
 
-## Architecture
+</details>
 
+<details>
+<summary><strong>File uploads (multipart)</strong></summary>
+
+`uploadFile` follows the [GraphQL multipart request spec](https://github.com/jaydenseric/graphql-multipart-request-spec).
+PDF text extraction happens server-side via pypdf — scanned/image-only PDFs are
+rejected with a hint to OCR them first, encrypted PDFs with a hint to decrypt.
+
+</details>
+
+## 🏗 Architecture
+
+```mermaid
+flowchart LR
+    C([Client]) -->|"GraphQL"| S["FastAPI + Strawberry"]
+    S --> R["RagService"]
+    R --> CH["Chunker<br/><sub>paragraph-aware</sub>"]
+    R --> E["Embedder<br/><sub>hash · local · OpenAI</sub>"]
+    R --> V["VectorStore<br/><sub>in-memory cosine</sub>"]
+    R --> L["LLM<br/><sub>extractive · OpenAI · Claude</sub>"]
+    V <--> DB[("SQLite<br/><sub>docs · chunks · vectors</sub>")]
+    style S fill:#e10098,color:#fff
+    style R fill:#1c1c28,color:#fff
 ```
-Client ── GraphQL (FastAPI + Strawberry) ── RagService
-                                              ├─ chunking       (paragraph-aware splitter)
-                                              ├─ Embedder       (hash | sentence-transformers | OpenAI)
-                                              ├─ VectorStore    (SQLite-backed, in-memory cosine search)
-                                              ├─ Database       (SQLite: documents, chunks, vectors)
-                                              └─ LLM            (extractive | OpenAI | Anthropic)
-```
 
-Every pipeline stage is an abstract interface (`Embedder`, `VectorStore`, `LLM`),
-so new backends are drop-in additions — see [Contributing](#contributing).
+Every pipeline stage is an abstract interface (`Embedder`, `VectorStore`, `LLM`) —
+new backends are drop-in additions, and several are up for grabs as
+[good first issues](https://github.com/mohithgowdak/graphsearch/issues).
 
-## Development
+## 🛠 Development
 
 ```bash
+git clone https://github.com/mohithgowdak/graphsearch && cd graphsearch
 pip install -e ".[dev]"
 ruff check .          # lint
-pytest -v             # tests run fully offline
+pytest -v             # 33 tests, all fully offline
 ```
 
-## Roadmap / good first issues
+## 🗺 Roadmap / good first issues
 
-- [ ] Additional vector store backends: Qdrant, Weaviate, Redis/Valkey, pgvector, FAISS
-- [ ] Additional embedding backends: Cohere, Voyage
+- [ ] Vector store backends: Qdrant, Weaviate, Redis/Valkey, pgvector, FAISS
+- [ ] Embedding backends: Cohere, Voyage
 - [ ] Streaming answers via GraphQL subscriptions
-- [ ] Metadata filters on `search` (tags, date ranges) and hybrid keyword+vector search
+- [ ] Metadata tags + filters; hybrid keyword+vector search (SQLite FTS5)
 - [ ] Auth (API keys / JWT) and rate limiting
 - [ ] Query/embedding caching
-- [ ] Auto-generated TypeScript client (GraphQL Code Generator)
-- [ ] Evaluation harness with known Q&A pairs; Prometheus metrics
+- [ ] Auto-generated TypeScript client
+- [ ] Evaluation harness + Prometheus metrics
 - [ ] Advanced RAG: query rewriting, multi-hop retrieval, citation spans
 
-## Contributing
+Most of these are filed with implementation notes —
+[grab one](https://github.com/mohithgowdak/graphsearch/issues) 👋
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
-style, and PR guidelines, and the issue tracker for `good first issue` labels.
+## 🤝 Contributing
 
-## License
+Contributions are very welcome! [CONTRIBUTING.md](CONTRIBUTING.md) covers setup,
+the backend-authoring guide, and PR guidelines. Look for the
+[`good first issue`](https://github.com/mohithgowdak/graphsearch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+label to get started.
 
-[MIT](LICENSE)
+## 📄 License
+
+[MIT](LICENSE) — do whatever you want, just keep the notice.
+
+---
+
+<div align="center">
+<sub>If GraphSearch saved you from wiring up a RAG pipeline by hand, consider giving it a ⭐ — it helps others find it.</sub>
+</div>
