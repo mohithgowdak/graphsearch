@@ -12,6 +12,9 @@ venv/
 .ruff_cache/
 .mypy_cache/
 
+# TypeScript client
+clients/typescript/node_modules/
+
 # Local state
 *.db
 .env
