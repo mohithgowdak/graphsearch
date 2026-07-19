@@ -1,0 +1,57 @@
+query Answer($question: String!, $topK: Int) {
+  answer(question: $question, topK: $topK) {
+    text
+    sources {
+      id
+      documentId
+      documentTitle
+      text
+      score
+    }
+  }
+}
+
+query Search($query: String!, $topK: Int) {
+  search(query: $query, topK: $topK) {
+    id
+    documentId
+    documentTitle
+    text
+    score
+  }
+}
+
+query Documents($limit: Int, $offset: Int) {
+  documents(limit: $limit, offset: $offset) {
+    id
+    title
+    source
+    createdAt
+    chunkCount
+  }
+}
+
+query Document($id: ID!) {
+  document(id: $id) {
+    id
+    title
+    source
+    content
+    createdAt
+    chunkCount
+  }
+}
+
+mutation UploadDocument($content: String!, $title: String, $source: String) {
+  uploadDocument(content: $content, title: $title, source: $source) {
+    id
+    title
+    source
+    createdAt
+    chunkCount
+  }
+}
+
+mutation DeleteDocument($id: ID!) {
+  deleteDocument(id: $id)
+}

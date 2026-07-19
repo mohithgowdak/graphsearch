@@ -1,0 +1,55 @@
+type Answer {
+  text: String!
+
+  """
+  Retrieved passages; citations like [1] in `text` are 1-indexed into this list.
+  """
+  sources: [Chunk!]!
+}
+
+type Chunk {
+  id: ID!
+  documentId: ID!
+  documentTitle: String
+  text: String!
+  score: Float!
+}
+
+type Document {
+  id: ID!
+  title: String
+  source: String
+  content: String!
+  createdAt: String!
+  chunkCount: Int!
+}
+
+type Mutation {
+  """Ingest a document: it is chunked, embedded, and indexed."""
+  uploadDocument(content: String!, title: String = null, source: String = null): Document!
+
+  """
+  Upload a file (PDF, Markdown, or plain text): its text is extracted, chunked, embedded, and indexed. Sent as a GraphQL multipart request.
+  """
+  uploadFile(file: Upload!, title: String = null, source: String = null): Document!
+
+  """Delete a document and its indexed chunks."""
+  deleteDocument(id: ID!): Boolean!
+}
+
+type Query {
+  """Ask a question and get an answer grounded in your documents."""
+  answer(question: String!, topK: Int = null): Answer!
+
+  """Semantic search: return the most relevant chunks for a query."""
+  search(query: String!, topK: Int = null): [Chunk!]!
+
+  """List ingested documents, newest first."""
+  documents(limit: Int! = 20, offset: Int! = 0): [Document!]!
+
+  """Fetch a single document by ID."""
+  document(id: ID!): Document
+}
+
+"""Represents a file upload."""
+scalar Upload
