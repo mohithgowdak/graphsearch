@@ -37,7 +37,7 @@ introspectable Q&amp;A API. Zero API keys, zero infrastructure to start.</p>
 | 🔍 **Semantic search, zero keys** | Ships with offline embeddings — `pip install` and ask questions. Add sentence-transformers for real semantic retrieval, still 100% local. |
 | 📎 **Grounded, cited answers** | Answers cite their sources as `[1]`, `[2]`, … mapping 1:1 to returned chunks with relevance scores. No hallucination hand-waving. |
 | 📄 **PDFs welcome** | Drop PDF / Markdown / text files into the Playground, the `uploadFile` mutation, or the CLI — text extraction is built in. |
-| 🧬 **One typed endpoint** | GraphQL means clients fetch exactly the fields they need, with introspection, GraphiQL, and codegen'd clients for free. |
+| 🧬 **One typed endpoint** | GraphQL means clients fetch exactly the fields they need, with introspection, GraphiQL, and a generated [TypeScript client](clients/typescript) that fails CI if it drifts from the schema. |
 | 🔌 **Pluggable everything** | Embedder, vector store, and LLM are clean interfaces. Swap OpenAI ↔ Claude ↔ offline modes with one env var. |
 | 🪶 **No infrastructure** | SQLite + numpy under the hood. No vector DB cluster, no queue, no Redis — until *you* decide you need one. |
 
@@ -157,6 +157,11 @@ rejected with a hint to OCR them first, encrypted PDFs with a hint to decrypt.
 
 </details>
 
+**TypeScript?** [`clients/typescript`](clients/typescript) ships a fully-typed
+SDK generated straight from this schema — `client.Answer({ question })`,
+`client.Search(...)`, etc. CI regenerates it on every push and fails the build
+if it drifts from the server.
+
 ## 🏗 Architecture
 
 ```mermaid
@@ -193,7 +198,7 @@ pytest -v             # 33 tests, all fully offline
 - [ ] Metadata tags + filters; hybrid keyword+vector search (SQLite FTS5)
 - [ ] Auth (API keys / JWT) and rate limiting
 - [ ] Query/embedding caching
-- [ ] Auto-generated TypeScript client
+- [x] Auto-generated TypeScript client — see [`clients/typescript`](clients/typescript)
 - [ ] Evaluation harness + Prometheus metrics
 - [ ] Advanced RAG: query rewriting, multi-hop retrieval, citation spans
 
